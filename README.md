@@ -1,4 +1,4 @@
-# react-native-shield 🛡️
+# react-native-shield — React Native Security Suite
 
 **The All-in-One Security Suite for React Native.**
 

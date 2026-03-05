@@ -1,7 +1,7 @@
 {
   "name": "@think-grid-labs/react-native-shield",
-  "version": "0.2.1",
-  "description": "All-in-one security suite",
+  "version": "0.3.1",
+  "description": "React Native security library — root detection, jailbreak detection, SSL pinning, biometric authentication, secure storage, and Play Integrity attestation for iOS and Android",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
@@ -42,6 +42,15 @@
   },
   "keywords": [
     "react-native",
+    "security",
+    "root-detection",
+    "jailbreak-detection",
+    "ssl-pinning",
+    "biometric-authentication",
+    "secure-storage",
+    "play-integrity",
+    "frida-detection",
+    "turbomodule",
     "ios",
     "android"
   ],
@@ -49,7 +58,7 @@
     "type": "git",
     "url": "git+https://github.com/ThinkGrid-Labs/react-native-shield.git"
   },
-  "author": "AkosiDencio <dtpaler@gmail.com>",
+  "author": "AkosiDencio <dennis@thinkgrid.dev>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/ThinkGrid-Labs/react-native-shield/issues"
