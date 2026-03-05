@@ -2,7 +2,8 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "react-native-shield": ["./src/index"]
+      "react-native-shield": ["./src/index"],
+      "@think-grid-labs/react-native-shield": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
