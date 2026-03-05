@@ -67,3 +67,44 @@ export function getSecureString(key: string): Promise<string | null> {
 export function removeSecureString(key: string): Promise<boolean> {
   return Shield.removeSecureString(key);
 }
+
+/**
+ * Returns an array of reason strings for why the device is considered rooted
+ * or jailbroken (e.g. "su_binary", "build_tags", "jailbreak_files").
+ * Returns an empty array if no indicators are found.
+ */
+export function getRootReasons(): string[] {
+  return Shield.getRootReasons();
+}
+
+/**
+ * Returns all keys currently stored in secure storage.
+ */
+export function getAllSecureKeys(): Promise<string[]> {
+  return Shield.getAllSecureKeys();
+}
+
+/**
+ * Deletes all entries from secure storage.
+ */
+export function clearAllSecureStorage(): Promise<boolean> {
+  return Shield.clearAllSecureStorage();
+}
+
+/**
+ * Returns the strongest biometric authentication level available on the device:
+ * "strong" (fingerprint / Face ID / iris), "weak" (face unlock), or "none".
+ */
+export function getBiometricStrength(): Promise<string> {
+  return Shield.getBiometricStrength();
+}
+
+/**
+ * Requests a platform integrity token.
+ * - Android: Play Integrity API token (verify server-side with Google)
+ * - iOS: DeviceCheck token (verify server-side with Apple)
+ * @param nonce An unpredictable, server-generated value to bind the token.
+ */
+export function requestIntegrityToken(nonce: string): Promise<string> {
+  return Shield.requestIntegrityToken(nonce);
+}

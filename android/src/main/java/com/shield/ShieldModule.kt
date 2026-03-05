@@ -1,6 +1,7 @@
 package com.shield
 
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.Arguments
 import java.io.File
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -14,9 +15,12 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.UiThreadUtil
+import com.google.android.play.core.integrity.IntegrityManagerFactory
+import com.google.android.play.core.integrity.IntegrityTokenRequest
 
 class ShieldModule(reactContext: ReactApplicationContext) :
   NativeShieldSpec(reactContext) {
@@ -267,6 +271,62 @@ class ShieldModule(reactContext: ReactApplicationContext) :
     }
   }
 
+  override fun getAllSecureKeys(promise: com.facebook.react.bridge.Promise) {
+    try {
+      val keys = Arguments.createArray()
+      for (key in getEncryptedSharedPreferences().all.keys) {
+        keys.pushString(key)
+      }
+      promise.resolve(keys)
+    } catch (e: Exception) {
+      promise.reject("SECURE_STORAGE_ERROR", e)
+    }
+  }
+
+  override fun clearAllSecureStorage(promise: com.facebook.react.bridge.Promise) {
+    try {
+      getEncryptedSharedPreferences().edit().clear().apply()
+      promise.resolve(true)
+    } catch (e: Exception) {
+      promise.reject("SECURE_STORAGE_ERROR", e)
+    }
+  }
+
+  override fun getBiometricStrength(promise: com.facebook.react.bridge.Promise) {
+    val manager = BiometricManager.from(reactApplicationContext)
+    when {
+      manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS ->
+        promise.resolve("strong")
+      manager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK) == BiometricManager.BIOMETRIC_SUCCESS ->
+        promise.resolve("weak")
+      else -> promise.resolve("none")
+    }
+  }
+
+  override fun getRootReasons(): com.facebook.react.bridge.WritableArray {
+    val reasons = Arguments.createArray()
+    if (checkRootMethod1()) reasons.pushString("build_tags")
+    if (checkRootMethod2()) reasons.pushString("su_binary")
+    if (checkRootMethod3()) reasons.pushString("su_command")
+    if (checkDangerousPackages()) reasons.pushString("dangerous_packages")
+    if (checkSystemMountFlags()) reasons.pushString("mount_flags")
+    return reasons
+  }
+
+  override fun requestIntegrityToken(nonce: String, promise: com.facebook.react.bridge.Promise) {
+    try {
+      val integrityManager = IntegrityManagerFactory.create(reactApplicationContext)
+      val request = IntegrityTokenRequest.builder()
+        .setNonce(nonce)
+        .build()
+      integrityManager.requestIntegrityToken(request)
+        .addOnSuccessListener { response -> promise.resolve(response.token()) }
+        .addOnFailureListener { e -> promise.reject("INTEGRITY_ERROR", e.message, e) }
+    } catch (e: Exception) {
+      promise.reject("INTEGRITY_ERROR", e.message, e)
+    }
+  }
+
   private fun checkRootMethod1(): Boolean {
     val buildTags = android.os.Build.TAGS
     return buildTags != null && buildTags.contains("test-keys")
@@ -302,6 +362,39 @@ class ShieldModule(reactContext: ReactApplicationContext) :
     } finally {
       process?.destroy()
     }
+  }
+
+  private fun checkDangerousPackages(): Boolean {
+    val suspiciousPackages = arrayOf(
+      "com.topjohnwu.magisk",
+      "eu.chainfire.supersu",
+      "com.koushikdutta.superuser",
+      "com.noshufou.android.su",
+      "com.thirdparty.superuser",
+      "com.yellowes.su",
+      "com.zachspong.temprootremovejb",
+      "com.ramdroid.appquarantine"
+    )
+    val pm = reactApplicationContext.packageManager
+    for (pkg in suspiciousPackages) {
+      try {
+        pm.getPackageInfo(pkg, 0)
+        return true
+      } catch (_: PackageManager.NameNotFoundException) {}
+    }
+    return false
+  }
+
+  private fun checkSystemMountFlags(): Boolean {
+    try {
+      val reader = BufferedReader(InputStreamReader(File("/proc/mounts").inputStream()))
+      var line: String?
+      while (reader.readLine().also { line = it } != null) {
+        val l = line ?: continue
+        if (l.contains("/system") && l.contains(" rw,")) return true
+      }
+    } catch (_: Exception) {}
+    return false
   }
 
   companion object {

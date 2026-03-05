@@ -5,10 +5,14 @@ import {
   setSecureString,
   getSecureString,
   removeSecureString,
+  getRootReasons,
+  getAllSecureKeys,
+  clearAllSecureStorage,
+  getBiometricStrength,
+  requestIntegrityToken,
 } from '../index';
 import NativeShield from '../NativeShield';
 
-// Prepare the mock
 jest.mock('../NativeShield', () => {
   return {
     __esModule: true,
@@ -19,6 +23,11 @@ jest.mock('../NativeShield', () => {
       setSecureString: jest.fn(),
       getSecureString: jest.fn(),
       removeSecureString: jest.fn(),
+      getRootReasons: jest.fn(),
+      getAllSecureKeys: jest.fn(),
+      clearAllSecureStorage: jest.fn(),
+      getBiometricStrength: jest.fn(),
+      requestIntegrityToken: jest.fn(),
     },
   };
 });
@@ -33,6 +42,21 @@ describe('react-native-shield', () => {
       (NativeShield.isRooted as jest.Mock).mockReturnValue(true);
       expect(isRooted()).toBe(true);
       expect(NativeShield.isRooted).toHaveBeenCalledTimes(1);
+    });
+
+    it('getRootReasons returns array of reason strings', () => {
+      (NativeShield.getRootReasons as jest.Mock).mockReturnValue([
+        'su_binary',
+        'dangerous_packages',
+      ]);
+      const reasons = getRootReasons();
+      expect(reasons).toEqual(['su_binary', 'dangerous_packages']);
+      expect(NativeShield.getRootReasons).toHaveBeenCalledTimes(1);
+    });
+
+    it('getRootReasons returns empty array on clean device', () => {
+      (NativeShield.getRootReasons as jest.Mock).mockReturnValue([]);
+      expect(getRootReasons()).toEqual([]);
     });
   });
 
@@ -67,7 +91,7 @@ describe('react-native-shield', () => {
   });
 
   describe('Secure Storage', () => {
-    it('setSecureString pass correct arguments', async () => {
+    it('setSecureString passes correct arguments', async () => {
       (NativeShield.setSecureString as jest.Mock).mockResolvedValue(true);
       const result = await setSecureString('key', 'value');
       expect(result).toBe(true);
@@ -86,6 +110,74 @@ describe('react-native-shield', () => {
       const result = await removeSecureString('key');
       expect(result).toBe(true);
       expect(NativeShield.removeSecureString).toHaveBeenCalledWith('key');
+    });
+
+    it('getAllSecureKeys returns array of keys', async () => {
+      (NativeShield.getAllSecureKeys as jest.Mock).mockResolvedValue([
+        'token',
+        'refresh_token',
+      ]);
+      const keys = await getAllSecureKeys();
+      expect(keys).toEqual(['token', 'refresh_token']);
+      expect(NativeShield.getAllSecureKeys).toHaveBeenCalledTimes(1);
+    });
+
+    it('getAllSecureKeys returns empty array when storage is empty', async () => {
+      (NativeShield.getAllSecureKeys as jest.Mock).mockResolvedValue([]);
+      expect(await getAllSecureKeys()).toEqual([]);
+    });
+
+    it('clearAllSecureStorage resolves true', async () => {
+      (NativeShield.clearAllSecureStorage as jest.Mock).mockResolvedValue(true);
+      const result = await clearAllSecureStorage();
+      expect(result).toBe(true);
+      expect(NativeShield.clearAllSecureStorage).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Biometrics', () => {
+    it('getBiometricStrength returns "strong"', async () => {
+      (NativeShield.getBiometricStrength as jest.Mock).mockResolvedValue(
+        'strong'
+      );
+      expect(await getBiometricStrength()).toBe('strong');
+    });
+
+    it('getBiometricStrength returns "weak"', async () => {
+      (NativeShield.getBiometricStrength as jest.Mock).mockResolvedValue(
+        'weak'
+      );
+      expect(await getBiometricStrength()).toBe('weak');
+    });
+
+    it('getBiometricStrength returns "none" when unavailable', async () => {
+      (NativeShield.getBiometricStrength as jest.Mock).mockResolvedValue(
+        'none'
+      );
+      expect(await getBiometricStrength()).toBe('none');
+    });
+  });
+
+  describe('Platform Attestation', () => {
+    it('requestIntegrityToken passes nonce and returns token string', async () => {
+      const fakeToken = 'base64encodedtoken==';
+      (NativeShield.requestIntegrityToken as jest.Mock).mockResolvedValue(
+        fakeToken
+      );
+      const result = await requestIntegrityToken('server-nonce-xyz');
+      expect(result).toBe(fakeToken);
+      expect(NativeShield.requestIntegrityToken).toHaveBeenCalledWith(
+        'server-nonce-xyz'
+      );
+    });
+
+    it('requestIntegrityToken rejects when unsupported', async () => {
+      (NativeShield.requestIntegrityToken as jest.Mock).mockRejectedValue(
+        new Error('INTEGRITY_NOT_SUPPORTED')
+      );
+      await expect(requestIntegrityToken('nonce')).rejects.toThrow(
+        'INTEGRITY_NOT_SUPPORTED'
+      );
     });
   });
 });
