@@ -1,4 +1,5 @@
 #import "Shield.h"
+#import <DeviceCheck/DeviceCheck.h>
 #import <LocalAuthentication/LocalAuthentication.h>
 #import <TrustKit/TrustKit.h>
 #import <UIKit/UIKit.h>
@@ -218,18 +219,40 @@
       publicKeyHashes:(NSArray *)publicKeyHashes
               resolve:(RCTPromiseResolveBlock)resolve
                reject:(RCTPromiseRejectBlock)reject {
-  // TrustKit does not support runtime reconfiguration without exception.
-  // In a fully dynamic scenario, developers should store pins in JS and pass
-  // them to addSSLPinning on app launch. This method serves as a stub
-  // to align with the Android API where OkHttp allows factory overrides.
-  resolve(nil);
+  // TrustKit does not support runtime reconfiguration after initialization.
+  // To update pins, store the new hashes and call addSSLPinning on next app
+  // launch. On Android, OkHttp factory overrides allow runtime updates.
+  reject(@"SSL_PIN_UPDATE_UNSUPPORTED",
+         @"TrustKit pins cannot be updated at runtime on iOS. "
+         @"Store updated hashes and call addSSLPinning on the next app launch.",
+         nil);
+}
+
+// Returns the active key window in a multi-scene compatible way (iOS 13+).
+- (UIWindow *)activeKeyWindow {
+  if (@available(iOS 13.0, *)) {
+    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+      if (scene.activationState == UISceneActivationStateForegroundActive &&
+          [scene isKindOfClass:[UIWindowScene class]]) {
+        UIWindowScene *windowScene = (UIWindowScene *)scene;
+        for (UIWindow *w in windowScene.windows) {
+          if (w.isKeyWindow) return w;
+        }
+        return windowScene.windows.firstObject;
+      }
+    }
+  }
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  return [UIApplication sharedApplication].keyWindow;
+#pragma clang diagnostic pop
 }
 
 - (void)preventScreenshot:(BOOL)prevent
                   resolve:(RCTPromiseResolveBlock)resolve
                    reject:(RCTPromiseRejectBlock)reject {
   dispatch_async(dispatch_get_main_queue(), ^{
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    UIWindow *window = [self activeKeyWindow];
     if (!window) {
       reject(@"NO_WINDOW", @"Key window is null", nil);
       return;
@@ -301,7 +324,7 @@
 
 // Background Blur Logic
 - (void)appWillResignActive {
-  UIWindow *window = [UIApplication sharedApplication].keyWindow;
+  UIWindow *window = [self activeKeyWindow];
   if (![window viewWithTag:12345]) {
     UIBlurEffect *blurEffect =
         [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
@@ -316,17 +339,11 @@
 }
 
 - (void)appDidBecomeActive {
-  UIWindow *window = [UIApplication sharedApplication].keyWindow;
+  UIWindow *window = [self activeKeyWindow];
   UIView *blurView = [window viewWithTag:12345];
   if (blurView) {
     [blurView removeFromSuperview];
   }
-}
-
-- (void)appDidBecomeActive {
-  UIWindow *window = [UIApplication sharedApplication].keyWindow;
-  UIView *blurView = [window viewWithTag:12345];
-  [blurView removeFromSuperview];
 }
 
 // Secure Storage Implementation (Keychain)
@@ -419,6 +436,157 @@
     reject(@"SECURE_STORAGE_ERROR", @"Failed to remove secure string", error);
   }
 }
+
+// ─── Secure Storage Helpers ───────────────────────────────────────────────────
+
+- (void)getAllSecureKeys:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject {
+  NSString *service = [[NSBundle mainBundle] bundleIdentifier];
+  NSDictionary *query = @{
+    (__bridge id)kSecClass : (__bridge id)kSecClassGenericPassword,
+    (__bridge id)kSecAttrService : service,
+    (__bridge id)kSecReturnAttributes : @YES,
+    (__bridge id)kSecMatchLimit : (__bridge id)kSecMatchLimitAll
+  };
+
+  CFTypeRef result = NULL;
+  OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, &result);
+
+  if (status == errSecSuccess) {
+    NSArray *items = (__bridge_transfer NSArray *)result;
+    NSMutableArray *keys = [NSMutableArray array];
+    for (NSDictionary *item in items) {
+      NSString *account = item[(__bridge id)kSecAttrAccount];
+      if (account) [keys addObject:account];
+    }
+    resolve(keys);
+  } else if (status == errSecItemNotFound) {
+    resolve(@[]);
+  } else {
+    NSError *error = [NSError errorWithDomain:NSOSStatusErrorDomain
+                                         code:status
+                                     userInfo:nil];
+    reject(@"SECURE_STORAGE_ERROR", @"Failed to enumerate keys", error);
+  }
+}
+
+- (void)clearAllSecureStorage:(RCTPromiseResolveBlock)resolve
+                        reject:(RCTPromiseRejectBlock)reject {
+  NSString *service = [[NSBundle mainBundle] bundleIdentifier];
+  NSDictionary *query = @{
+    (__bridge id)kSecClass : (__bridge id)kSecClassGenericPassword,
+    (__bridge id)kSecAttrService : service
+  };
+
+  OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
+  if (status == errSecSuccess || status == errSecItemNotFound) {
+    resolve(@(YES));
+  } else {
+    NSError *error = [NSError errorWithDomain:NSOSStatusErrorDomain
+                                         code:status
+                                     userInfo:nil];
+    reject(@"SECURE_STORAGE_ERROR", @"Failed to clear storage", error);
+  }
+}
+
+// ─── Biometric Strength ───────────────────────────────────────────────────────
+
+- (void)getBiometricStrength:(RCTPromiseResolveBlock)resolve
+                       reject:(RCTPromiseRejectBlock)reject {
+  LAContext *context = [[LAContext alloc] init];
+  NSError *error = nil;
+  if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics
+                           error:&error]) {
+    // On iOS, Face ID and Touch ID are both classified as strong biometrics.
+    resolve(@"strong");
+  } else {
+    resolve(@"none");
+  }
+}
+
+// ─── Jailbreak Reason Codes ──────────────────────────────────────────────────
+
+- (NSArray *)collectJailbreakReasons {
+  NSMutableArray *reasons = [NSMutableArray array];
+
+  NSArray *jailbreakPaths = @[
+    @"/Applications/Cydia.app",
+    @"/Applications/Sileo.app",
+    @"/Applications/Zebra.app",
+    @"/Library/MobileSubstrate/MobileSubstrate.dylib",
+    @"/bin/bash",
+    @"/usr/sbin/sshd",
+    @"/etc/apt",
+    @"/private/var/lib/apt/",
+    @"/usr/bin/ssh",
+  ];
+  for (NSString *path in jailbreakPaths) {
+    if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
+      [reasons addObject:@"jailbreak_files"];
+      break;
+    }
+  }
+
+  NSError *writeError;
+  [@"check" writeToFile:@"/private/jailbreak_rw_test.txt"
+             atomically:YES
+               encoding:NSUTF8StringEncoding
+                  error:&writeError];
+  if (!writeError) {
+    [reasons addObject:@"sandbox_escape"];
+    [[NSFileManager defaultManager] removeItemAtPath:@"/private/jailbreak_rw_test.txt" error:nil];
+  }
+
+  if ([[UIApplication sharedApplication]
+          canOpenURL:[NSURL URLWithString:@"cydia://package/com.example.package"]]) {
+    [reasons addObject:@"cydia_scheme"];
+  }
+
+  uint32_t count = _dyld_image_count();
+  for (uint32_t i = 0; i < count; i++) {
+    const char *name = _dyld_get_image_name(i);
+    if (name) {
+      NSString *imageName = [NSString stringWithUTF8String:name];
+      if ([imageName containsString:@"MobileSubstrate"] ||
+          [imageName containsString:@"Substrate"]) {
+        [reasons addObject:@"substrate_loaded"];
+        break;
+      }
+    }
+  }
+
+  return [reasons copy];
+}
+
+- (NSArray *)getRootReasons {
+  return [self collectJailbreakReasons];
+}
+
+// ─── Platform Integrity Attestation ─────────────────────────────────────────
+
+- (void)requestIntegrityToken:(NSString *)nonce
+                       resolve:(RCTPromiseResolveBlock)resolve
+                        reject:(RCTPromiseRejectBlock)reject {
+  if (@available(iOS 11.0, *)) {
+    DCDevice *device = [DCDevice currentDevice];
+    if (![device isSupported]) {
+      reject(@"INTEGRITY_NOT_SUPPORTED",
+             @"DeviceCheck is not supported on this device", nil);
+      return;
+    }
+    [device generateTokenWithCompletionHandler:^(NSData *token, NSError *error) {
+      if (error) {
+        reject(@"INTEGRITY_ERROR", error.localizedDescription, error);
+      } else {
+        resolve([token base64EncodedStringWithOptions:0]);
+      }
+    }];
+  } else {
+    reject(@"INTEGRITY_NOT_SUPPORTED", @"DeviceCheck requires iOS 11+", nil);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params {

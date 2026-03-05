@@ -16,6 +16,19 @@ export interface Spec extends TurboModule {
   setSecureString(key: string, value: string): Promise<boolean>;
   getSecureString(key: string): Promise<string | null>;
   removeSecureString(key: string): Promise<boolean>;
+
+  // Enhanced integrity detection
+  getRootReasons(): string[];
+
+  // Secure storage helpers
+  getAllSecureKeys(): Promise<string[]>;
+  clearAllSecureStorage(): Promise<boolean>;
+
+  // Biometric capability
+  getBiometricStrength(): Promise<string>;
+
+  // Platform attestation
+  requestIntegrityToken(nonce: string): Promise<string>;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('Shield');

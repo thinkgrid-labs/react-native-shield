@@ -17,5 +17,6 @@ Pod::Spec.new do |s|
   s.private_header_files = "ios/**/*.h"
 
   s.dependency "TrustKit"
+  s.frameworks = "DeviceCheck", "LocalAuthentication", "Security"
   install_modules_dependencies(s)
 end
