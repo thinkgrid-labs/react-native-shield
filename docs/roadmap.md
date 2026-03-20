@@ -78,4 +78,4 @@ Lock the public API surface and introduce a configuration object.
 
 ---
 
-Have a feature request or want to contribute? Open an issue at [github.com/ThinkGrid-Labs/react-native-shield](https://github.com/ThinkGrid-Labs/react-native-shield/issues).
+Have a feature request or want to contribute? Open an issue at [github.com/thinkgrid-labs/react-native-shield](https://github.com/thinkgrid-labs/react-native-shield/issues).

@@ -7,7 +7,7 @@ Prevent Man-in-the-Middle (MitM) attacks by verifying your server's certificate 
 Call `addSSLPinning` **early in your app lifecycle** — before any network requests are made.
 
 ```typescript
-import { addSSLPinning } from '@think-grid-labs/react-native-shield';
+import { addSSLPinning } from '@thinkgrid/react-native-shield';
 
 useEffect(() => {
   const configurePinning = async () => {
@@ -39,7 +39,7 @@ openssl s_client -servername api.yourdomain.com -connect api.yourdomain.com:443 
 ## Rotating pins
 
 ```typescript
-import { updateSSLPins } from '@think-grid-labs/react-native-shield';
+import { updateSSLPins } from '@thinkgrid/react-native-shield';
 
 // Android: takes effect immediately at runtime
 // iOS: throws SSL_PIN_UPDATE_UNSUPPORTED — new pins apply after next app launch

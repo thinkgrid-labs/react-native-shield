@@ -13,7 +13,7 @@ import {
   isHooked,
   verifySignature,
   getRootReasons,
-} from '@think-grid-labs/react-native-shield';
+} from '@thinkgrid/react-native-shield';
 
 const checkIntegrity = () => {
   if (isRooted()) {

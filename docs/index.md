@@ -14,7 +14,7 @@ hero:
       link: /api/device-integrity
     - theme: alt
       text: View on GitHub
-      link: https://github.com/ThinkGrid-Labs/react-native-shield
+      link: https://github.com/thinkgrid-labs/react-native-shield
 
 features:
   - title: Device Integrity & Anti-Tampering
