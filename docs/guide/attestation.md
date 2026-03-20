@@ -5,7 +5,7 @@ Request a **cryptographically signed integrity token** from Google or Apple that
 ## Usage
 
 ```typescript
-import { requestIntegrityToken } from '@think-grid-labs/react-native-shield';
+import { requestIntegrityToken } from '@thinkgrid/react-native-shield';
 
 const verifyDeviceWithServer = async () => {
   try {

@@ -5,7 +5,7 @@ Native biometric prompt (Face ID / Touch ID / Android Biometrics) with strength-
 ## Authenticate the user
 
 ```typescript
-import { authenticateWithBiometrics } from '@think-grid-labs/react-native-shield';
+import { authenticateWithBiometrics } from '@thinkgrid/react-native-shield';
 
 const loginWithBiometrics = async () => {
   const success = await authenticateWithBiometrics('Authenticate to continue');
@@ -22,7 +22,7 @@ const loginWithBiometrics = async () => {
 Different sensors have very different security properties. Face Unlock on Android is classified as "weak" (2D camera, spoofable with a photo). Face ID and fingerprint readers are "strong" (secure enclave, spoof-resistant hardware).
 
 ```typescript
-import { getBiometricStrength } from '@think-grid-labs/react-native-shield';
+import { getBiometricStrength } from '@thinkgrid/react-native-shield';
 
 const enforceStrongBiometrics = async () => {
   const strength = await getBiometricStrength();

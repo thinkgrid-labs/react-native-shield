@@ -9,7 +9,7 @@ import {
   setSecureString,
   getSecureString,
   removeSecureString,
-} from '@think-grid-labs/react-native-shield';
+} from '@thinkgrid/react-native-shield';
 
 // Store
 await setSecureString('access_token', 'eyJhbGci...');
@@ -24,7 +24,7 @@ await removeSecureString('access_token');
 ## Enumerate keys
 
 ```typescript
-import { getAllSecureKeys } from '@think-grid-labs/react-native-shield';
+import { getAllSecureKeys } from '@thinkgrid/react-native-shield';
 
 const keys = await getAllSecureKeys();
 // ['access_token', 'refresh_token', 'user_id']
@@ -35,7 +35,7 @@ Useful for migration scripts, key rotation, or auditing storage state before a r
 ## Bulk wipe
 
 ```typescript
-import { clearAllSecureStorage } from '@think-grid-labs/react-native-shield';
+import { clearAllSecureStorage } from '@thinkgrid/react-native-shield';
 
 const handleLogout = async () => {
   await clearAllSecureStorage();

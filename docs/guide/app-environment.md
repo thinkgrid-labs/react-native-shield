@@ -3,7 +3,7 @@
 ## VPN detection
 
 ```typescript
-import { isVPNDetected } from '@think-grid-labs/react-native-shield';
+import { isVPNDetected } from '@thinkgrid/react-native-shield';
 
 if (isVPNDetected()) {
   // Traffic is routed through a VPN or proxy interface
@@ -19,7 +19,7 @@ if (isVPNDetected()) {
 Auto-clear the clipboard whenever the app goes to the background:
 
 ```typescript
-import { protectClipboard } from '@think-grid-labs/react-native-shield';
+import { protectClipboard } from '@thinkgrid/react-native-shield';
 
 // Enable at startup
 protectClipboard(true);

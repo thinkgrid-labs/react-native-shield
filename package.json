@@ -56,14 +56,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ThinkGrid-Labs/react-native-shield.git"
+    "url": "git+https://github.com/thinkgrid-labs/react-native-shield.git"
   },
   "author": "AkosiDencio <dennis@thinkgrid.dev>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ThinkGrid-Labs/react-native-shield/issues"
+    "url": "https://github.com/thinkgrid-labs/react-native-shield/issues"
   },
-  "homepage": "https://github.com/ThinkGrid-Labs/react-native-shield#readme",
+  "homepage": "https://github.com/thinkgrid-labs/react-native-shield#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"

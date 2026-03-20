@@ -5,7 +5,7 @@ Prevent sensitive UI from being captured in screenshots, screen recordings, or t
 ## Usage
 
 ```typescript
-import { preventScreenshot } from '@think-grid-labs/react-native-shield';
+import { preventScreenshot } from '@thinkgrid/react-native-shield';
 
 // Enable — call when entering a sensitive screen
 await preventScreenshot(true);

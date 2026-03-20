@@ -26,7 +26,7 @@ import {
   getAllSecureKeys,
   clearAllSecureStorage,
   requestIntegrityToken,
-} from '@think-grid-labs/react-native-shield';
+} from '@thinkgrid/react-native-shield';
 
 type ResultMap = Record<string, string>;
 

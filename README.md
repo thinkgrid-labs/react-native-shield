@@ -23,11 +23,11 @@
 ## Installation
 
 ```sh
-npm install @think-grid-labs/react-native-shield
+npm install @thinkgrid/react-native-shield
 # or
-yarn add @think-grid-labs/react-native-shield
+yarn add @thinkgrid/react-native-shield
 # or
-pnpm add @think-grid-labs/react-native-shield
+pnpm add @thinkgrid/react-native-shield
 ```
 
 ### iOS Setup
@@ -68,7 +68,7 @@ import {
   getAllSecureKeys,
   clearAllSecureStorage,
   requestIntegrityToken,
-} from '@think-grid-labs/react-native-shield';
+} from '@thinkgrid/react-native-shield';
 ```
 
 ---
