@@ -1,6 +1,6 @@
 {
-  "name": "@thinkgrid/react-native-shield",
-  "version": "0.3.2",
+  "name": "@think-grid-labs/react-native-shield",
+  "version": "0.4.2",
   "description": "React Native security library — root detection, jailbreak detection, SSL pinning, biometric authentication, secure storage, and Play Integrity attestation for iOS and Android",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
